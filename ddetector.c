@@ -16,11 +16,14 @@ static int n_lock = 0;
 
 int pthread_mutex_lock(pthread_mutex_t *mutex){
         int (*pthread_mutex_lock_p)(pthread_mutex_t *mutex);
-        n_lock+=1;
+        static __thread int n_nodes = 0;
         char * error ;
         int i;
+        int j;
+
         pthread_t p_id;
         p_id = pthread_self();
+
         pthread_mutex_lock_p = dlsym(RTLD_NEXT, "pthread_mutex_lock") ;
         if ((error = dlerror()) != 0x0)
                 exit(1);
@@ -35,17 +38,21 @@ int pthread_mutex_lock(pthread_mutex_t *mutex){
                 else if( input_thread[i] == p_id) break;
 
         }
+        mutex_nodes[i][n_nodes] = mutex;
+        n_nodes += 1;
 
-        for( i = 0; i < THREAD_NUM; i++)
-        {
-                fprintf(stderr, "input_thread[%d], %ud\n",i,(int)input_thread[i]);
-
+        fprintf(stderr, "\n========================\n");
+        for( i=0; i < THREAD_NUM; i++){
+         for( j=0; j< MUTEX_NUM/20 ; j++){
+              fprintf(stderr, "[ %p] ",mutex_nodes[i][j]);
+         }
+         fprintf(stderr, "\n ");
         }
-        fprintf(stderr, "mutex : %p, %d", mutex,n_lock);
-        //fprintf(stderr, "input_thread[i], %ud\n",(int)input_thread[0],i); 
+        //fprintf(stderr, "mutex : %p, %d\n",&mutex,n_nodes); 
         return pthread_mutex_lock_p(mutex);
 
 }
+
 int pthread_mutex_unlock(pthread_mutex_t *mutex){
         int(* pthread_mutex_unlock_p)(pthread_mutex_t *mutex);
         char * error ;
